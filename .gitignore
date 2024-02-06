@@ -1,0 +1,7 @@
+.vscode/
+logs/
+temp/
+#env.sh
+#lore.yml
+*.token
+*.sh

@@ -1,0 +1,34 @@
+jobs:
+  - name: khranity
+    path: /root/khranity
+    token: "file:khranity.token"
+    schedule: "*/2 * * * 0,1,2,3,4,5,6"
+    tz: "Europe/Moscow"
+    cloud: yandex
+  - name: m0ta-blog-nextjs
+    path: /root/dev/web/m0ta-blog
+    token: "file:khranity.token"
+    schedule: "0 0 * * 0,1,2,3,4,5,6"
+    tz: "Europe/Moscow"
+    cloud: yandex
+
+clouds:
+  - name: selectel
+    method: aws
+    url: "https://s3.storage.selcloud.ru"
+    region: "ru-1"
+    bucket: backups
+    access_id:  "file:selectelID.token"
+    secret_key: "file:selectelKey.token"
+    token:
+  - name: yandex
+    method: aws
+    url: "https://storage.yandexcloud.net"
+    region: "ru-central1"
+    bucket: backups1
+    access_id:  "file:yandexID.token"
+    secret_key: "file:yandexKey.token"
+    token:
+
+setup:
+  os: nix
