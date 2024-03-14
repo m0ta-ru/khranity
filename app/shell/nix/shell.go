@@ -18,9 +18,14 @@ import (
 	"khranity/app/cloud"
 )
 
+const (
+	maxSize		= int64(3 * 1024 * 1024 * 1024) // 3 Gb - max size of object to upload
+	maxPartSize	= int64(99 * 1024 * 1024) 		// 99 Mb- max part size for multu upload
+)
+
 func (sh *ShellNix) Start(ctx context.Context, job *lore.Job) error {
 	if (len(job.Schedule) < 1) {
-		sh.logger.Debug("empty schedule", 
+		sh.logger.Error("empty schedule", 
 			log.Object("job", job),
 		)
 		return utils.ErrIncorrectJob
@@ -61,15 +66,17 @@ func (sh *ShellNix) Exec(ctx context.Context, job *lore.Job) error {
 }
 
 func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
-	// TODO job with BIG DATA
+	start 	:= time.Now()
 	// create tar-file
 	path := strings.Replace(job.Path, " ", "_", -1)
 	name := strings.Replace(job.Name, " ", "_", -1)
 	isDir, err := isDir(path)
 	if (err != nil) || !isDir {
 		sh.logger.Error("incorrect path: shell.Get", 
-			log.String("err", err.Error()),
-			log.Object("job", job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("path", 		path),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrIncorrectJob
 	}
@@ -80,8 +87,9 @@ func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
 	jobCloud, err := lore.GetCloud(job.Cloud)
 	if (err != nil) {
 		sh.logger.Error("lore.GetCloud",
-			log.String("err", 	err.Error()),
-			log.Object("job", 	job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrUndefinedCloud
 	}
@@ -89,8 +97,9 @@ func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
 	cld, err := cloud.New(ctx, sh.logger, jobCloud)
 	if (err != nil) {
 		sh.logger.Error("cloud.New",
-			log.String("err", 	err.Error()),
-			log.Object("job", 	job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrCloudInternal
 	}
@@ -98,32 +107,39 @@ func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
 	err = cld.Cloud.DownloadObject(ctx, jobCloud.Bucket, job.Name, fileName)
 	if (err != nil) {
 		sh.logger.Error("cloud.DownloadObject",
-			log.String("err", 	err.Error()),
-			log.String("file", 	fileName),
-			log.Object("job", 	job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrCloudInternal
 	}
 
 	// decrypt if necessary
 	token := lore.GetToken(job.Token)
-	if (len(token) > 15) {
-		err = crypt.DecryptFile(fileName, fileName, token)
-		if (err != nil) {
-			sh.logger.Error("decrypt failed", 
-				log.String("err", err.Error()),
-				log.Object("job", job),
-			)
-			return utils.ErrInternal
-		}
+	//if (len(token) > 15) {
+	err = crypt.DecryptFile(fileName, fileName, token)
+	if (err != nil) {
+		sh.logger.Error("decrypt failed", 
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("token",		token),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
+		)
+		return utils.ErrInternal
 	}
+	//}
 
 	// extract archive
 	err = targz.Extract(fileName, path)
 	if err != nil {
 		sh.logger.Error("extract failed", 
-			log.String("err", err.Error()),
-			log.Object("job", job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("path", 		path),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrInternal
 	}
@@ -132,25 +148,34 @@ func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
 	err = os.Remove(fileName)
     if err != nil {
 		sh.logger.Error("os.Remove",
-			log.String("err", 	err.Error()),
-			log.String("file", 	fileName),
-			log.Object("job", 	job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
 		)
     }
+
+	sh.logger.Info("job done",
+		log.String("method", 	"Get"),
+		log.Object("job", 		job),
+		log.String("duration", 	time.Since(start).String()),
+	)
 
 	return nil
 }
 
 func (sh *ShellNix) Put(ctx context.Context, job *lore.Job, temp string) error {
-	// TODO job with BIG DATA
+	start 	:= time.Now()
 	// create tar-file
 	path := strings.Replace(job.Path, " ", "_", -1)
 	name := strings.Replace(job.Name, " ", "_", -1)
 	isDir, err := isDir(path)
 	if (err != nil) || !isDir {
 		sh.logger.Error("incorrect path: shell.Put", 
-			log.String("err", err.Error()),
-			log.Object("job", job),
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("path", 		path),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrIncorrectJob
 	}
@@ -169,9 +194,11 @@ func (sh *ShellNix) Put(ctx context.Context, job *lore.Job, temp string) error {
 	
 	err = targz.Compress(path, fileName)
 	if err  != nil {
-		sh.logger.Error("compress failed", 
-			log.String("err", err.Error()),
-			log.Object("job", job),
+		sh.logger.Error("compress failed: shell.Put", 
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrInternal
 	}
@@ -179,71 +206,96 @@ func (sh *ShellNix) Put(ctx context.Context, job *lore.Job, temp string) error {
 	// TODO files more then 99 MB skip
 	stat, err := os.Stat(fileName)
 	if (err != nil) {
-		sh.logger.Error("fileinfo failed", 
-			log.String("err", err.Error()),
-			log.Object("job", job),
+		sh.logger.Error("fileinfo failed: shell.Put", 
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrInternal
 	}
 	
-	if stat.Size() > 99 * 1048576 {
-		sh.logger.Error("bigdata skiped", 
-			log.Object("job", job),
-		)
-		return utils.ErrInternal
-	}
-
 	// encrypt if necessary
 	token := lore.GetToken(job.Token)
 	//if (len(token) > 15) {
-		err = crypt.EncryptFile(fileName, fileName, token)
-		if (err != nil) {
-			sh.logger.Error("encrypt failed", 
-				log.String("err", err.Error()),
-				log.Object("job", job),
-			)
-			return utils.ErrInternal
-		}
+	err = crypt.EncryptFile(fileName, fileName, token)
+	if (err != nil) {
+		sh.logger.Error("encrypt failed: shell.Put", 
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("token",		token),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
+		)
+		return utils.ErrInternal
+	}
 	//}
 
 	// upload to cloud
 	jobCloud, err := lore.GetCloud(job.Cloud)
 	if (err != nil) {
-		sh.logger.Error("lore.GetCloud",
+		sh.logger.Error("lore.GetCloud: shell.Put",
 			log.String("err", 	err.Error()),
 			log.Object("job", 	job),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrUndefinedCloud
 	}
 
 	cld, err := cloud.New(ctx, sh.logger, jobCloud)
 	if (err != nil) {
-		sh.logger.Error("cloud.New",
+		sh.logger.Error("cloud.New: shell.Put",
 			log.String("err", 	err.Error()),
 			log.Object("job", 	job),
+			log.String("duration", 	time.Since(start).String()),
 		)
 		return utils.ErrCloudInternal
 	}
 
-	err = cld.Cloud.UploadObject(ctx, jobCloud.Bucket, job.Name, fileName)
-	if (err != nil) {
-		sh.logger.Error("cloud.UploadObject",
-			log.String("err", 	err.Error()),
-			log.String("file", 	fileName),
-			log.Object("job", 	job),
-		)
-		return utils.ErrCloudInternal
+	if stat.Size() > maxSize {
+		return utils.ErrOverSize
+	}
+
+	if stat.Size() > maxPartSize {
+		err = cld.Cloud.UploadBigObject(ctx, jobCloud.Bucket, job.Name, fileName)
+		if (err != nil) {
+			sh.logger.Error("cloud.UploadBigObject: shell.Put",
+				log.String("err", 		err.Error()),
+				log.Object("job", 		job),
+				log.String("file", 		fileName),
+				log.String("duration", 	time.Since(start).String()),
+			)
+			return utils.ErrCloudInternal
+		}
+	} else {
+		err = cld.Cloud.UploadObject(ctx, jobCloud.Bucket, job.Name, fileName)
+		if (err != nil) {
+			sh.logger.Error("cloud.UploadObject: shell.Put",
+				log.String("err", 		err.Error()),
+				log.Object("job", 		job),
+				log.String("file", 		fileName),
+				log.String("duration", 	time.Since(start).String()),
+			)
+			return utils.ErrCloudInternal
+		}
 	}
 
 	// remove temp-file
 	err = os.Remove(fileName)
     if err != nil {
-		sh.logger.Error("os.Remove",
-			log.String("err", 	err.Error()),
-			log.String("file", 	fileName),
-			log.Object("job", 	job),
+		sh.logger.Error("os.Remove: shell.Put",
+			log.String("err", 		err.Error()),
+			log.Object("job", 		job),
+			log.String("file", 		fileName),
+			log.String("duration", 	time.Since(start).String()),
 		)
     }
+
+	sh.logger.Info("job done",
+		log.String("method", 	"Put"),
+		log.Object("job", 		job),
+		log.String("duration", 	time.Since(start).String()),
+	)
 	
 	return nil
 }

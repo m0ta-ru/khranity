@@ -11,6 +11,13 @@ jobs:
     schedule: "0 0 * * 0,1,2,3,4,5,6"
     tz: "Europe/Moscow"
     cloud: yandex
+  - name: test
+    path: /root/temp/source1
+    #path: /root/www.m0ta.ru
+    token: "file:khranity.token"
+    schedule: "0 0 * * 0,1,2,3,4,5,6"
+    tz: "Europe/Moscow"
+    cloud: yandex
 
 clouds:
   - name: selectel

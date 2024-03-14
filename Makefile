@@ -70,7 +70,7 @@ image-delete:
 	docker image prune
 
 test-get:
-	go run ./cmd/console/*.go get -n "m0ta-blog-nextjs" -p "/root/temp"
+	go run ./cmd/console/*.go get -n "m0ta-blog-nextjs" -p "/root/temp/out"
 
 test-put:
 	go run ./cmd/console/*.go put -n "m0ta-blog-nextjs"
