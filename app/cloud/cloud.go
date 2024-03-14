@@ -18,6 +18,8 @@ type Cloud interface {
 	//Download()
 	UploadObject(context.Context, string, string, string) error
 	DownloadObject(context.Context, string, string, string) error
+
+	UploadBigObject(context.Context, string, string, string) error
 	//List(context.Context, lore.Job) error
 }
 

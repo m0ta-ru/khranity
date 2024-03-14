@@ -1,6 +1,8 @@
 package log
 
 import (
+	"time"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -33,6 +35,10 @@ func Float32(key string, value float32) Field {
 
 func Float64(key string, value float64) Field {
 	return zap.Float64(key, value)
+}
+
+func Duration(key string, value time.Duration) Field {
+	return zap.Duration(key, value)
 }
 
 func ByteString(key string, value []byte) Field {

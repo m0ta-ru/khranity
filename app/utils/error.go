@@ -15,4 +15,6 @@ var (
 	ErrBadToken         = errors.New("bad token")
 	ErrGone             = errors.New("resource gone")
 	ErrBusy             = errors.New("resource is busy")
+	ErrExceededRetries	= errors.New("exceeded retries")
+	ErrOverSize			= errors.New("over size")
 )
