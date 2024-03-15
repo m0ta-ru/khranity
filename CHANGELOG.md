@@ -1,6 +1,7 @@
 # CHANGELOG
 
-## 2024-03-13
+## 2024-03-15
+* upd: get ready for go version 1.22.1
 * new: add support BIG data
 * fix: some epic and awesome bugs
 

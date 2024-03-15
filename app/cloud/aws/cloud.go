@@ -38,7 +38,12 @@ func CreateClient(cloud *lore.Cloud) *s3.Client {
 		lore.GetToken(cloud.Token),
 	)
 
-	config, err := config.LoadDefaultConfig(context.TODO(), config.WithEndpointResolverWithOptions(resolver), config.WithCredentialsProvider(provider))
+	config, err := config.LoadDefaultConfig(
+		context.TODO(), 
+		config.WithEndpointResolverWithOptions(resolver), 
+		config.WithCredentialsProvider(provider), 
+		config.WithRegion("auto"),
+	)
 	if err != nil {
 		return nil
 	}

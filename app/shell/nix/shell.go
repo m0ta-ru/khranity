@@ -130,7 +130,7 @@ func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
 		return utils.ErrInternal
 	}
 	//}
-
+	// TODO try lib: https://github.com/mholt/archiver
 	// extract archive
 	err = targz.Extract(fileName, path)
 	if err != nil {
@@ -191,7 +191,7 @@ func (sh *ShellNix) Put(ctx context.Context, job *lore.Job, temp string) error {
 	// }
 	//fileName := fmt.Sprintf("%v/%v_%v.tar.gz", temp, name, tail)
 	fileName := fmt.Sprintf("%v/%v.tar.gz", temp, name)
-	
+	// TODO try lib: https://github.com/mholt/archiver
 	err = targz.Compress(path, fileName)
 	if err  != nil {
 		sh.logger.Error("compress failed: shell.Put", 
