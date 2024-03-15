@@ -3,6 +3,8 @@ ARG GO_VERSION
 # start from a Alpine image with the specified version of Go installed
 # and a workspace (GOPATH) configured at /go. AS golang
 FROM golang:${GO_VERSION}-alpine AS golang
+# set label for future deleting
+LABEL stage=temp
 # set environment variables
 ENV GO_VERSION=${GO_VERSION}
 # update packages and install tzdata for further usage
@@ -14,10 +16,12 @@ COPY . .
 # download and verify all required dependencies
 RUN go mod download && go mod verify
 # build executable file
-RUN go build -o /build/exec ./cmd/console/*.go
+RUN go build -o /build/exec ./cmd/service/*.go
 
 # start another blank image from the latest version of an Alpine image
 FROM alpine
+# set label
+LABEL stage=run
 # contact maintainer with any issues you encounter
 LABEL maintainer.name="m0ta" \
       maintainer.email="dev@m0ta.ru"

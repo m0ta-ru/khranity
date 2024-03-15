@@ -1,43 +1,32 @@
 .PHONY: build-svc build-con
 
 build-svc:
-	go build -o ./build/service cmd/service/main.go
+	go build -o ./build/service cmd/service/*.go
 
 build-con:
 	go build -o ./build/console cmd/console/*.go
 
-.PHONY: image-svc image-svc-alpine docker-svc-con
+.PHONY: image-svc
 # build service image
-image-svc-alpine:
-	docker build 									\
-		--tag khranity:service .					\
-		--no-cache									\
-		--force-rm									\
-		--build-arg GO_VERSION=1.20.6				\
-		--file ./cmd/service/Dockerfile-alpine
-
-image-svc-ubuntu:
-	docker build 									\
-		--tag khranity:service .					\
-		--no-cache									\
-		--force-rm									\
-		--build-arg GO_VERSION=1.20.6				\
-		--file ./cmd/service/Dockerfile-ubuntu
 image-svc:
-	make image-svc-alpine
+	docker build 									\
+		--tag khranity:service .					\
+		--no-cache									\
+		--force-rm									\
+		--build-arg GO_VERSION=1.22.1				\
+		--file ./docker/service/Dockerfile
+	docker image prune --force --filter label=stage=temp
 
-.PHONY: image-con image-con-alpine docker-run-con
+.PHONY: image-con
 # build console image
-image-con-alpine:
+image-con:
 	docker build 									\
 		--tag khranity:console .					\
 		--no-cache									\
 		--force-rm									\
-		--build-arg GO_VERSION=1.20.6				\
-		--file ./cmd/console/Dockerfile-alpine
-
-image-con:
-	make image-con-alpine
+		--build-arg GO_VERSION=1.22.1				\
+		--file ./docker/console/Dockerfile
+	docker image prune --force --filter label=stage=temp
 
 # run image
 docker-run-svc:
@@ -65,12 +54,8 @@ docker-run-con:
 		--tmpfs /tmp											\
 		khranity:console get -n "khranity" -p "/exec/data" -l "/exec/config/lore.yml"
 
-image-delete:
-	docker rm $(docker ps -q -f status=exited)
-	docker image prune
-
 test-get:
-	go run ./cmd/console/*.go get -n "m0ta-blog-nextjs" -p "/root/temp/out"
+	go run ./cmd/console/*.go get -n "test" -p "/tmp/khranity"
 
 test-put:
-	go run ./cmd/console/*.go put -n "m0ta-blog-nextjs"
+	go run ./cmd/console/*.go put -n "test"

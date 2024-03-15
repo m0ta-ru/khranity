@@ -144,7 +144,7 @@ func (cld *Cloud) UploadBigObject(ctx context.Context, bucketName string, object
 
 	parts 	:= []s3Types.CompletedPart{}
 	rest 	:= fileSize
-	count 	:= 1
+	count 	:= int32(1)
 
 	for start := int64(0); rest != 0; start += maxPartSize {
 		var size int64
@@ -186,16 +186,17 @@ func (cld *Cloud) UploadBigObject(ctx context.Context, bucketName string, object
 	return nil
 }
 
-func (cld *Cloud) upload(output *s3.CreateMultipartUploadOutput, fileBytes []byte, partNum int) (completedPart s3Types.CompletedPart, err error) {
+func (cld *Cloud) upload(output *s3.CreateMultipartUploadOutput, fileBytes []byte, partNum int32) (completedPart s3Types.CompletedPart, err error) {
 	try := 1
 	for try <= maxRetries {
+		length := int64(len(fileBytes))
 		uploadResp, err := cld.client.UploadPart(context.TODO(), &s3.UploadPartInput{
 			Body:          bytes.NewReader(fileBytes),
 			Bucket:        aws.String(*output.Bucket),
 			Key:           aws.String(*output.Key),
-			PartNumber:    int32(partNum),
+			PartNumber:    &partNum,
 			UploadId:      output.UploadId,
-			ContentLength: int64(len(fileBytes)),
+			ContentLength: &length,
 		})
 		if err != nil {
 			cld.logger.Debug("cld.client.UploadPart: upload",
@@ -210,7 +211,7 @@ func (cld *Cloud) upload(output *s3.CreateMultipartUploadOutput, fileBytes []byt
 		} else {
 			return s3Types.CompletedPart{
 				ETag:       uploadResp.ETag,
-				PartNumber: int32(partNum),
+				PartNumber: &partNum,
 			}, nil
 		}
 	}
