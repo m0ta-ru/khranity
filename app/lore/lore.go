@@ -19,31 +19,34 @@ var (
 	once   	sync.Once
 )
 
+type Ignores []string
+
 type (
 	Job struct {
-		Name		string	`yaml:"name"`
-		Path		string	`yaml:"path"`
-		Schedule	string	`yaml:"schedule"`	// in cron format
-		TZ			string	`yaml:"tz"`			// "Asia/Shanghai"
-		//Size		int		`yaml:"size"`
-		Cloud		string	`yaml:"cloud"`		// from struct Cloud.Name
-		Token		string	`yaml:"token"`		// token, file:token_file
+		Name			string		`yaml:"name"`
+		Path			string		`yaml:"path"`
+		Schedule	string		`yaml:"schedule"`	// in cron format
+		TZ				string		`yaml:"tz"`				// "Asia/Shanghai"
+		//Size		int			`yaml:"size"`
+		Cloud			string		`yaml:"cloud"`		// from struct Cloud.Name
+		Archiver	string		`yaml:"archiver"`	// archiver method
+		Token			string		`yaml:"token"`		// token, file:token_file
+		Ignore		Ignores		`yaml:"ignore"`		// ignore object list
 	}
 
 	Cloud struct {
-		Name		string	`yaml:"name"`
-		Method		string	`yaml:"method"`			// aws, yandex, selectel
-		Url			string	`yaml:"url"`
+		Name			string	`yaml:"name"`
+		Method		string	`yaml:"method"`				// aws, yandex, selectel
+		Url				string	`yaml:"url"`
 		Region		string	`yaml:"region"`
 		Bucket		string	`yaml:"bucket"`
 		AccessID	string	`yaml:"access_id"`		// access_key, file:access_key_file
 		SecretKey	string	`yaml:"secret_key"`		// secret_key, file:secret_key_file
-		Token		string	`yaml:"token"`			// token, file:token_file
+		Token			string	`yaml:"token"`				// token, file:token_file
 	}
 
 	Setup struct {
 		OS			string	`yaml:"os"`			// nix, win
-		//Cloud		string	`yaml:"cloud"`		// aws, yandex, selectel
 	}
 
 	Lore struct {
@@ -53,23 +56,32 @@ type (
 	}
 )
 
+func (data Ignores) MarshalLogArray(arr zapcore.ArrayEncoder) error {
+	for i := range data {
+		arr.AppendString(data[i])
+	}
+	return nil
+}
+
 func (job *Job) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("Name",		job.Name)
-    enc.AddString("Path",		job.Path)
+  enc.AddString("Path",		job.Path)
+	enc.AddArray("Ignore",		job.Ignore)
 	enc.AddString("Schedule",	job.Schedule)
 	enc.AddString("Cloud",		job.Cloud)
 	enc.AddString("Token",		job.Token)
+	enc.AddString("Archiver",	job.Archiver)
 	//enc.AddInt("Size",			job.Size)
 	return nil
 }
 
 func (cloud *Cloud) MarshalLogObject(enc zapcore.ObjectEncoder) error {
-	enc.AddString("Name",		cloud.Name)
-    enc.AddString("Url",		cloud.Url)
+	enc.AddString("Name",			cloud.Name)
+  enc.AddString("Url",			cloud.Url)
 	enc.AddString("Region",		cloud.Region)
 	enc.AddString("Bucket",		cloud.Bucket)
 	enc.AddString("AccessID",	cloud.AccessID)
-	enc.AddString("SecretKey",	cloud.SecretKey)
+	enc.AddString("SecretKey",cloud.SecretKey)
 	enc.AddString("Token",		cloud.Token)
 	return nil
 }

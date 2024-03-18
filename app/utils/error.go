@@ -6,10 +6,12 @@ import (
 
 var (
 	ErrUndefinedOS	    = errors.New("undefined operation system")
+	ErrUndefinedArchiver= errors.New("undefined archive provider")
 	ErrUndefinedCloud	= errors.New("undefined cloud provider")
 	ErrIncorrectJob   	= errors.New("incorrect job")
 	ErrShellInternal	= errors.New("internal shell error")
 	ErrCloudInternal	= errors.New("internal cloud error")
+	ErrArchiverInternal = errors.New("internal archiver error")
 	ErrInternal     	= errors.New("internal error")
 	ErrForbidden        = errors.New("forbidden access")
 	ErrBadToken         = errors.New("bad token")

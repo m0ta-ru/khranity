@@ -12,7 +12,8 @@ import (
 	"khranity/app/config"
 	"khranity/app/log"
 	"khranity/app/lore"
-	"khranity/app/targz"
+	//"khranity/app/targz"
+	"khranity/app/archiver"
 	"khranity/app/crypt"
 	"khranity/app/utils"
 	"khranity/app/cloud"
@@ -34,7 +35,9 @@ func (sh *ShellNix) Start(ctx context.Context, job *lore.Job) error {
 	
 	_, err := task.Cron(job.Schedule).Do(sh.Exec, ctx, job)
 	if err != nil {
-		log.Debug("shell.Start", log.String("err", err.Error()))
+		sh.logger.Error("shell.Start", 
+			log.String("err", err.Error()),
+		)
 		return utils.ErrIncorrectJob
 	}
 	
@@ -58,9 +61,9 @@ func (sh *ShellNix) Exec(ctx context.Context, job *lore.Job) error {
 		return err
 	}
 
-	sh.logger.Info("job done",
-		log.Object("job", 	job),
-	)
+	// sh.logger.Info("job done",
+	// 	log.Object("job", 	job),
+	// )
 	
 	return nil
 }
@@ -130,18 +133,39 @@ func (sh *ShellNix) Get(ctx context.Context, job *lore.Job, temp string) error {
 		return utils.ErrInternal
 	}
 	//}
-	// TODO try lib: https://github.com/mholt/archiver
+	
 	// extract archive
-	err = targz.Extract(fileName, path)
-	if err != nil {
-		sh.logger.Error("extract failed", 
+	// err = targz.Extract(fileName, path)
+	// if err != nil {
+	// 	sh.logger.Error("extract failed", 
+	// 		log.String("err", 		err.Error()),
+	// 		log.Object("job", 		job),
+	// 		log.String("path", 		path),
+	// 		log.String("file", 		fileName),
+	// 		log.String("duration", 	time.Since(start).String()),
+	// 	)
+	// 	return utils.ErrInternal
+	// }
+
+	arch, err := archiver.New(ctx, sh.logger, job.Archiver)
+	if (err != nil) {
+		sh.logger.Error("archiver.New",
 			log.String("err", 		err.Error()),
 			log.Object("job", 		job),
-			log.String("path", 		path),
-			log.String("file", 		fileName),
 			log.String("duration", 	time.Since(start).String()),
 		)
-		return utils.ErrInternal
+		return utils.ErrArchiverInternal
+	}
+
+	err = arch.Provider.Extract(ctx, job, fileName, path)
+	if (err != nil) {
+		sh.logger.Error("archiver.Append",
+			log.String("err", 		err.Error()),
+			log.String("file", 		fileName),
+			log.String("path", 		path),
+			log.String("duration", 	time.Since(start).String()),
+		)
+		return utils.ErrArchiverInternal
 	}
 
 	// remove temp-file
@@ -191,19 +215,38 @@ func (sh *ShellNix) Put(ctx context.Context, job *lore.Job, temp string) error {
 	// }
 	//fileName := fmt.Sprintf("%v/%v_%v.tar.gz", temp, name, tail)
 	fileName := fmt.Sprintf("%v/%v.tar.gz", temp, name)
-	// TODO try lib: https://github.com/mholt/archiver
-	err = targz.Compress(path, fileName)
-	if err  != nil {
-		sh.logger.Error("compress failed: shell.Put", 
+	// err = targz.Compress(path, fileName)
+	// if err  != nil {
+	// 	sh.logger.Error("compress failed: shell.Put", 
+	// 		log.String("err", 		err.Error()),
+	// 		log.Object("job", 		job),
+	// 		log.String("file", 		fileName),
+	// 		log.String("duration", 	time.Since(start).String()),
+	// 	)
+	// 	return utils.ErrInternal
+	// }
+
+	arch, err := archiver.New(ctx, sh.logger, job.Archiver)
+	if (err != nil) {
+		sh.logger.Error("archiver.New",
 			log.String("err", 		err.Error()),
 			log.Object("job", 		job),
+			log.String("duration", 	time.Since(start).String()),
+		)
+		return utils.ErrArchiverInternal
+	}
+
+	err = arch.Provider.Append(ctx, job, path, fileName)
+	if (err != nil) {
+		sh.logger.Error("archiver.Append",
+			log.String("err", 		err.Error()),
+			log.String("path", 		path),
 			log.String("file", 		fileName),
 			log.String("duration", 	time.Since(start).String()),
 		)
-		return utils.ErrInternal
+		return utils.ErrArchiverInternal
 	}
 
-	// TODO files more then 99 MB skip
 	stat, err := os.Stat(fileName)
 	if (err != nil) {
 		sh.logger.Error("fileinfo failed: shell.Put", 
