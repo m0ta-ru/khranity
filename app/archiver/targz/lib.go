@@ -16,7 +16,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"io"
-	"io/ioutil"
+	//"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,12 +26,15 @@ import (
 )
 
 var ignoreFile = ".khranityignore"
+var ignores = []string{}
 
 // Compress creates a archive from the folder inputFilePath points to in the file outputFilePath points to.
 // Only adds the last directory in inputFilePath to the archive, not the whole path.
 // It tries to create the directory structure outputFilePath contains if it doesn't exist.
 // It returns potential errors to be checked or nil if everything works.
-func Compress(inputFilePath, outputFilePath string) (err error) {
+func Compress(inputFilePath, outputFilePath string, ignore []string) (err error) {
+	ignores = ignore
+
 	inputFilePath = stripTrailingSlashes(inputFilePath)
 	inputFilePath, outputFilePath, err = makeAbsolute(inputFilePath, outputFilePath)
 	if err != nil {
@@ -148,7 +151,7 @@ func makeAbsolute(inputFilePath, outputFilePath string) (string, string, error) 
 // The finished archive contains just the directory added, not any parents.
 // This is possible by giving the whole path exept the final directory in subPath.
 func compress(inPath, outFilePath, subPath string) (err error) {
-	files, err := ioutil.ReadDir(inPath)
+	files, err := os.ReadDir(inPath)
 	if err != nil {
 		return err
 	}
@@ -195,30 +198,37 @@ func compress(inPath, outFilePath, subPath string) (err error) {
 
 // Read a directy and write it to the tar writer. Recursive function that writes all sub folders.
 func writeDirectory(directory string, tarWriter *tar.Writer, subPath string) error {
-	ignoreData, err := ignore.CompileIgnoreFile(ignoreFile)
+	ignoreData, err := ignore.CompileIgnoreFileAndLines(ignoreFile, ignores...)
 	if err == nil {
+		if ignoreData.MatchesPath(directory) {
+			return nil // skip
+		}
+	} else {
+		ignoreData := ignore.CompileIgnoreLines(ignores...)
 		if ignoreData.MatchesPath(directory) {
 			return nil // skip
 		}
 	}
 
-	files, err := ioutil.ReadDir(directory)
+	files, err := os.ReadDir(directory)
 	if err != nil {
 		return err
 	}
 
 	for _, file := range files {
 		currentPath := filepath.Join(directory, file.Name())
-		// if !file.Mode().IsRegular() { //nothing more to do for non-regular
-		// 	continue
-		// }
+
 		if file.IsDir() {
 			err := writeDirectory(currentPath, tarWriter, subPath)
 			if err != nil {
 				return err
 			}
 		} else {
-			err = writeTarGz(currentPath, tarWriter, file, subPath)
+			fileInfo, err := file.Info()
+			if err != nil {
+				return err
+			}
+			err = writeTarGz(currentPath, tarWriter, fileInfo, subPath)
 			if err != nil {
 				return err
 			}
@@ -232,6 +242,11 @@ func writeDirectory(directory string, tarWriter *tar.Writer, subPath string) err
 func writeTarGz(path string, tarWriter *tar.Writer, fileInfo os.FileInfo, subPath string) error {
 	ignoreData, err := ignore.CompileIgnoreFile(ignoreFile)
 	if err == nil {
+		if ignoreData.MatchesPath(path) {
+			return nil // skip
+		}
+	} else {
+		ignoreData := ignore.CompileIgnoreLines(ignores...)
 		if ignoreData.MatchesPath(path) {
 			return nil // skip
 		}
