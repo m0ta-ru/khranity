@@ -13,6 +13,7 @@ import (
 	"khranity/app/utils"
 )
 
+//const ErrUndefinedCloud
 var (
 	lore    *Lore
 	//jobs 	[]Job
@@ -57,6 +58,9 @@ type (
 )
 
 func (data Ignores) MarshalLogArray(arr zapcore.ArrayEncoder) error {
+	if (data == nil) {
+		return utils.ErrInternal
+	}
 	for i := range data {
 		arr.AppendString(data[i])
 	}
@@ -64,6 +68,9 @@ func (data Ignores) MarshalLogArray(arr zapcore.ArrayEncoder) error {
 }
 
 func (job *Job) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if (job == nil) {
+		return utils.ErrIncorrectJob
+	}
 	enc.AddString("Name",		job.Name)
   enc.AddString("Path",		job.Path)
 	enc.AddArray("Ignore",		job.Ignore)
@@ -76,6 +83,9 @@ func (job *Job) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 }
 
 func (cloud *Cloud) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if (cloud == nil) {
+		return utils.ErrUndefinedCloud
+	}
 	enc.AddString("Name",			cloud.Name)
   enc.AddString("Url",			cloud.Url)
 	enc.AddString("Region",		cloud.Region)
@@ -83,6 +93,16 @@ func (cloud *Cloud) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("AccessID",	cloud.AccessID)
 	enc.AddString("SecretKey",cloud.SecretKey)
 	enc.AddString("Token",		cloud.Token)
+	return nil
+}
+
+func (lore *Lore) MarshalLogObject(enc zapcore.ObjectEncoder) error {
+	if (lore == nil) {
+		return utils.ErrUndefinedCloud
+	}
+	for _, cloud := range lore.Clouds {
+		enc.AddObject("Cloud",	&cloud)	
+	}
 	return nil
 }
 

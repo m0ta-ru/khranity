@@ -59,3 +59,6 @@ test-get:
 
 test-put:
 	go run ./cmd/console/*.go put -n "test"
+
+test-check:
+	go run ./cmd/console/*.go check -l "lore.yml"

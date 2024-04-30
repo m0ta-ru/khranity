@@ -26,7 +26,6 @@ type Cloud struct {
 func CreateClient(cloud *lore.Cloud) *s3.Client {
 	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		return aws.Endpoint{
-			//PartitionID:   "ya",
 			URL:           cloud.Url,
 			SigningRegion: cloud.Region,
 		}, nil
@@ -48,7 +47,9 @@ func CreateClient(cloud *lore.Cloud) *s3.Client {
 		return nil
 	}
 
-	return s3.NewFromConfig(config)
+	return s3.NewFromConfig(config, func(o *s3.Options){
+		o.UsePathStyle = true
+	})
 }
 
 // NewCloud ...
@@ -64,9 +65,12 @@ func NewCloud(logger *log.Logger, cloud *lore.Cloud) *Cloud {
 
 // TestCloud ...
 func TestCloud(cloud *lore.Cloud) error {
-	_, err := CreateClient(cloud).ListBuckets(context.TODO(), &s3.ListBucketsInput{})
+	list, err := CreateClient(cloud).ListBuckets(context.TODO(), &s3.ListBucketsInput{})
 	if err != nil {
 		return err
+	}
+	for _, bucket := range list.Buckets {
+		log.Get().Debug("bucket", log.String("Name", *bucket.Name))
 	}
 	return nil
 }

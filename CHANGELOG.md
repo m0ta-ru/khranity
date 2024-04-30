@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2024-04-30
+* fix: use path style for s3 storage
+
 ## 2024-03-18
 * new: add ignore params to lore.yml
 * new: add various archivers (native/targz)

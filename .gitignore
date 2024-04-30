@@ -1,6 +1,6 @@
 .vscode/
 logs/
 temp/
-#lore.yml
+lore.yml
 *.token
 *.sh

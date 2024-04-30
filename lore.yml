@@ -11,11 +11,11 @@ jobs:
       - build
       - logs
   - name: test
-    path: /root/test
+    path: /root/khranity
     token: "file:khranity.token"
     schedule: "0 1 * * 0,1,2,3,4,5,6"
     tz: "Europe/Moscow"
-    cloud: yandex
+    cloud: warhoop
     archiver: native
     ignore:
       - .git
@@ -38,6 +38,20 @@ clouds:
     bucket: backups1
     access_id:  "file:yandexID.token"
     secret_key: "file:yandexKey.token"
+  - name: m0ta
+    method: aws
+    url: "https://minio.m0ta.ru"
+    region: "ru-1"
+    bucket: benefy01
+    access_id:  "file:m0taID.token"
+    secret_key: "file:m0taKey.token"
+  - name: warhoop
+    method: aws
+    url: "https://storage.warhoop.su"
+    region: "ru-01"
+    bucket: test
+    access_id:  "file:warhoopID.token"
+    secret_key: "file:warhoop.token"
 
 setup:
   os: nix
