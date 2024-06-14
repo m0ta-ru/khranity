@@ -23,9 +23,7 @@ func main() {
 
 func run() error {
 	ctx := context.Background()
-	lore := lore.Get()
-
-	err := cloud.TestClouds(ctx, lore.Clouds)
+	err := cloud.TestClouds(ctx, lore.Get().Clouds)
 	if err != nil {
 		return err
 	}
@@ -43,8 +41,8 @@ func run() error {
 	done := make(chan struct{})
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
-
-	ticker := time.NewTicker(time.Second)
+	// check for update lore every 60 seconds
+	ticker := time.NewTicker(60 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -53,12 +51,10 @@ func run() error {
 			return nil
 		case <-interrupt:
 			log.Warn("interrupt")
-
-			select {
-			case <-done:
-			case <-time.After(time.Second):
-			}
 			return nil
+		case <-time.After(time.Second):
+		case <-ticker.C:
+      lore.CheckUpdating()
 		}
 	}
 }
