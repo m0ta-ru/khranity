@@ -17,7 +17,7 @@ import (
 var ignoreFile = ".khranityignore"
 
 func tarAppend(source, target string, ignores []string) error {
-	ignoreFile = path.Join(source, ignoreFile)
+	ignorePath := path.Join(source, ignoreFile)
 	
 	tarfile, err := os.Create(target)
 	if err != nil {
@@ -46,7 +46,7 @@ func tarAppend(source, target string, ignores []string) error {
 				return err
 			}
 
-			ignoreData, err := ignore.CompileIgnoreFileAndLines(ignoreFile, ignores...)
+			ignoreData, err := ignore.CompileIgnoreFileAndLines(ignorePath, ignores...)
 			if err == nil {
 				if ignoreData.MatchesPath(path) {
 					return nil // skip
