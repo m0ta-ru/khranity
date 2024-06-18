@@ -1,15 +1,41 @@
 # khranity
-service for easy and fast put/get object to cloud storage
+Khranity is a service for easy and fast put/get objects to S3/cloud storage
 
 ## features
 - works with S3 API storage
-- support ignore list
+- support ignore file/list
 
 ## usage
 
+If necessary, you can have a file `.khranityignore` by analogy `.gitignore`, for example:
+```
+# git
+.git
+
+# dependencies
+node_modules
+resources
+
+# next.js
+.next
+out
+
+# production
+build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# misc
+.contentlayer
+```
+
 ### settings
 
-example of settings in `lore.yml`:
+An example of settings in `lore.yml`:
 ```
 jobs:
   - name: khranity
@@ -46,7 +72,7 @@ setup:
 
 ### docker
 
-example params for runing docker container:
+An example of the necessary parameters to run docker container:
 ```
   --volume ~/.khranity/logs:/exec/logs				    \  
   --read-only --volume ~/.khranity/config:/exec/config	\
